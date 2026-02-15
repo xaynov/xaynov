@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xaynov | OSINT Reports</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/xaynov/xaynov/main/image_e0733f.jpg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --accent: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--accent);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+    </style>
+</head>
+<body class="min-h-screen p-6 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-[#0a0a0a] to-[#050505]">
+
+    <nav class="max-w-4xl mx-auto mb-12 animate-fade">
+        <a href="index.html" class="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors duration-300 mono text-xs uppercase tracking-widest">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            Back to home
+        </a>
+    </nav>
+
+    <main class="max-w-4xl mx-auto flex flex-col items-center">
+        
+        <header class="text-center mb-16 animate-fade stagger-1">
+            <h1 class="text-4xl font-light tracking-[0.2em] mb-4 glow-text uppercase">Reports</h1>
+            <p class="text-sm text-gray-500 tracking-tighter uppercase mono italic">Public Archive of Investigations & Methods</p>
+        </header>
+
+        <div id="reports-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-20 animate-fade stagger-2">
+            <div class="col-span-full text-center py-20 opacity-30 mono text-[10px] uppercase tracking-[0.3em]">
+                Establishing connection to archive...
+            </div>
+        </div>
+
+        <footer class="w-full text-center space-y-4 opacity-40 hover:opacity-80 transition-opacity duration-500 animate-fade">
+            <div class="flex flex-col items-center gap-2">
+                <div class="flex items-center gap-2 text-red-500/60 justify-center">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span class="text-[9px] font-bold tracking-[0.2em] uppercase">Disclaimer</span>
+                </div>
+                <p class="text-[10px] leading-relaxed max-w-xs mx-auto mono">
+                    Все материалы публикуются исключительно в ознакомительных целях.
+                </p>
+            </div>
+            <p class="text-[9px] tracking-widest mono mt-4">&copy; 2026 xaynov</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- CONFIG ---
+        const CONFIG = {
+            username: 'xaynov',
+            repo: 'xaynov.github.io', // твой репозиторий
+            folder: 'reports'        // папка, где лежат pdf
+        };
+
+        async function fetchReports() {
+            const grid = document.getElementById('reports-grid');
+            
+            try {
+                // Стучимся в GitHub API
+                const url = `https://api.github.com/repos/${CONFIG.username}/${CONFIG.repo}/contents/${CONFIG.folder}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) throw new Error('Could not fetch reports');
+                
+                const files = await response.json();
+                
+                // Фильтруем только PDF
+                const pdfs = files.filter(file => file.name.toLowerCase().endsWith('.pdf'));
+
+                if (pdfs.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full text-center mono opacity-50 text-[10px] uppercase">Archive is empty</div>`;
+                    return;
+                }
+
+                // Рисуем карточки
+                grid.innerHTML = pdfs.map(file => {
+                    const title = file.name.replace(/\.pdf$/i, '').replace(/_/g, ' ');
+                    const fileUrl = `https://${CONFIG.username}.github.io/${CONFIG.repo}/${CONFIG.folder}/${file.name}`;
+
+                    return `
+                        <a href="${fileUrl}" target="_blank" class="glass p-6 rounded-2xl flex flex-col h-full group">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="badge mono text-gray-400 uppercase tracking-widest">Case Study</span>
+                                <span class="text-[10px] text-gray-600 mono uppercase">Verified</span>
+                            </div>
+                            <h3 class="text-xl font-light mb-3 group-hover:text-white transition-colors leading-tight capitalize">
+                                ${title}
+                            </h3>
+                            <p class="text-sm text-gray-400 font-light leading-relaxed mb-6 flex-grow">
+                                Technical document automatically indexed from the central investigative repository.
+                            </p>
+                            <div class="flex items-center gap-2 text-xs text-white/50 group-hover:text-white transition-colors mt-auto">
+                                <span class="mono">Read report</span>
+                                <svg class="w-3 h-3 translate-x-0 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                grid.innerHTML = `<div class="col-span-full text-center mono text-red-500 text-[10px] uppercase">Connection Error: ${error.message}</div>`;
+            }
+        }
+
+        fetchReports();
+    </script>
+</body>
+</html>
